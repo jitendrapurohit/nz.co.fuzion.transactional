@@ -3,7 +3,7 @@
 require_once 'transactional.civix.php';
 
 /**
- * Implements hook_civicrm_alterMailParams()
+ * Implements hook_civicrm_alterMailParams().
  *
  * Add bounce headers for non-CiviMail messages.
  *
@@ -17,7 +17,7 @@ function transactional_civicrm_alterMailParams(&$params, $context) {
 }
 
 /**
- * Implements hook_civicrm_postEmailSend()
+ * Implements hook_civicrm_postEmailSend().
  *
  * Mark mail as delivered.
  *
@@ -28,7 +28,7 @@ function transactional_civicrm_postEmailSend($params) {
 }
 
 /**
- * Implements hook_civicrm_alterTemplateFile()
+ * Implements hook_civicrm_alterTemplateFile().
  *
  * Use a different template for transactional mailing reports.
  *
@@ -43,7 +43,30 @@ function transactional_civicrm_alterTemplateFile($formName, &$form, $context, &$
 }
 
 /**
- * Implements hook_civicrm_buildForm()
+ * Implements hook_civicrm_searchColumns().
+ *
+ * @link https://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_searchColumns
+ */
+function transactional_civicrm_searchColumns($objectName, &$headers, &$rows, &$selector) {
+  if ($objectName == 'mailing' && count($headers) == 3) {
+    $headers['activity'] = array('name' => 'Activity');
+    $activity = civicrm_api3('OptionValue', 'getsingle', array(
+      'return' => array("value"),
+      'name' => "ReceiptActivity",
+    ));
+    foreach ($rows as $queueId => $val) {
+      if (!$queueId) {
+        continue;
+      }
+      $activityId = CRM_Core_DAO::singleValueQuery("SELECT receipt_activity_id FROM civicrm_recipient_receipt WHERE queue_id = {$queueId}");
+      $activityURL = CRM_Utils_System::url('civicrm/activity', "atype={$activity['value']}&action=view&reset=1&id=$activityId");
+      $rows[$queueId]['activity'] = "<a href='$activityURL' title='Go to Receipt Activity'>Receipt Activity</a>";
+    }
+  }
+}
+
+/**
+ * Implements hook_civicrm_buildForm().
  *
  * Just stash the contact ID away for later use.
  *
@@ -65,8 +88,6 @@ function transactional_civicrm_config(&$config) {
 /**
  * Implements hook_civicrm_xmlMenu().
  *
- * @param $files array(string)
- *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_xmlMenu
  */
 function transactional_civicrm_xmlMenu(&$files) {
@@ -79,7 +100,31 @@ function transactional_civicrm_xmlMenu(&$files) {
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_install
  */
 function transactional_civicrm_install() {
+  CRM_Core_DAO::executeQuery('CREATE TABLE `civicrm_recipient_receipt` (
+    `id` int unsigned NOT NULL AUTO_INCREMENT  COMMENT \'Unique ID\',
+    `queue_id` int(10)    COMMENT \'Event Queue id\',
+    `receipt_activity_id` int(10)    COMMENT \'Activity id of the receipt.\',
+      PRIMARY KEY ( `id` )
+    )  ENGINE=InnoDB DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci  ;
+  ');
+
+  civicrm_api3('OptionValue', 'create', array(
+    'option_group_id' => "activity_type",
+    'label' => "Receipt",
+    'name' => "ReceiptActivity",
+    'description' => "Receipt Sent",
+    'icon' => "fa-envelope-o",
+  ));
   _transactional_civix_civicrm_install();
+}
+
+/**
+ * Implements hook_civicrm_postInstall().
+ *
+ * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_postInstall
+ */
+function transactional_civicrm_postInstall() {
+  _transactional_civix_civicrm_postInstall();
 }
 
 /**
@@ -88,6 +133,14 @@ function transactional_civicrm_install() {
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_uninstall
  */
 function transactional_civicrm_uninstall() {
+  $activity = civicrm_api3('OptionValue', 'getsingle', array(
+    'return' => array("id"),
+    'name' => "ReceiptActivity",
+  ));
+  civicrm_api3('OptionValue', 'delete', array(
+    'id' => $activity['id'],
+  ));
+  CRM_Core_DAO::executeQuery("DROP TABLE civicrm_recipient_receipt");
   _transactional_civix_civicrm_uninstall();
 }
 
@@ -111,13 +164,6 @@ function transactional_civicrm_disable() {
 
 /**
  * Implements hook_civicrm_upgrade().
- *
- * @param $op string, the type of operation being performed; 'check' or 'enqueue'
- * @param $queue CRM_Queue_Queue, (for 'enqueue') the modifiable list of pending up upgrade tasks
- *
- * @return mixed
- *   Based on op. for 'check', returns array(boolean) (TRUE if upgrades are pending)
- *                for 'enqueue', returns void
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_upgrade
  */
@@ -161,7 +207,7 @@ function transactional_civicrm_caseTypes(&$caseTypes) {
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_caseTypes
  */
 function transactional_civicrm_angularModules(&$angularModules) {
-_transactional_civix_civicrm_angularModules($angularModules);
+  _transactional_civix_civicrm_angularModules($angularModules);
 }
 
 /**
@@ -172,18 +218,3 @@ _transactional_civix_civicrm_angularModules($angularModules);
 function transactional_civicrm_alterSettingsFolders(&$metaDataFolders = NULL) {
   _transactional_civix_civicrm_alterSettingsFolders($metaDataFolders);
 }
-
-/**
- * Functions below this ship commented out. Uncomment as required.
- *
-
-/**
- * Implements hook_civicrm_preProcess().
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_preProcess
- *
-function transactional_civicrm_preProcess($formName, &$form) {
-
-}
-
-*/

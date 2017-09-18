@@ -6,7 +6,7 @@ CiviCRM by default only performs bounce handling when sending via CiviMail, but 
 
 ## Author
 
-This extension was written by Dave Reedy on behalf of Fuzion Aotearoa.
+This extension was written by Dave Reedy on behalf of [Fuzion](https://www.fuzion.co.nz).
 
 ## Configuration
 
@@ -27,13 +27,19 @@ Bounce reporting, delivery, open and click tracking should work as per regular C
 * It uses a custom template for the mailing summary report. It's replaced using a hook instead of an override.
 * This extension should work for 4.6 CiviCRM.
 
+## Sponsorship
+
+The development of this extension was financially sponsored by [Agileware](https://agileware.com.au) to give back to the CiviCRM community and support Agileware's CiviCRM customers. Contact Agileware for CiviCRM support and development services in Australia.
+
 ## Support
 
-This extension is contributed by [Fuzion Aotearoa](https://www.fuzion.co.nz). Contact us for professional support and development requests.
+This extension is contributed by [Fuzion](https://www.fuzion.co.nz). 
 
-We welcome contributions and bug reports via the extension's Github issue queue.
+We welcome contributions and bug reports via the the [nz.co.fuzion.transactional issue queue](https://github.com/fuzionnz/nz.co.fuzion.transactional.issues).
 
 Community support is available via CiviCRM community channels:
 
 * [CiviCRM chat](https://chat.civicrm.org)
 * [CiviCRM question & answer forum on StackExchange](https://civicrm.stackexchange.com)
+
+Contact us - info@fuzion.co.nz - for professional support and development requests.
